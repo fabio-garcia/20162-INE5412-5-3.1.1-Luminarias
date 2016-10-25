@@ -1,5 +1,3 @@
-//Simple LED thread for reading usb and turning LEDs out
-
 #include <utility/ostream.h>
 #include <gpio.h>
 #include <alarm.h>
@@ -7,35 +5,38 @@
 #include <thread.h>
 
 void sleep(unsigned long);
-int changeBrightness(int intensity);
-int changeBrightnessR(int intensity);
-int changeBrightnessG(int intensity);
-int changeBrightnessB(int intensity);
-int inputIntensity(int input);
+int changeBrightnessR();
+int changeBrightnessG();
+int changeBrightnessB();
+int inputIntensity();
 
 using namespace EPOS;
 
-GPIO ledR('C', 3, EPOS::GPIO::OUTPUT);
-GPIO ledG('C', 1, EPOS::GPIO::OUTPUT);
-GPIO ledB('C', 0, EPOS::GPIO::OUTPUT);
+GPIO ledR('C', 3, GPIO::OUTPUT);
+GPIO ledG('C', 1, GPIO::OUTPUT);
+GPIO ledB('C', 0, GPIO::OUTPUT);
 Thread * cbR;
 Thread * cbG;
 Thread * cbB;
 Thread * usbIn;
-int current = 200;
 int input;
+int currentR = 10;
+int currentG = 20;
+int currentB = 30;
 OStream cout;
+
 int main(int argc, char** argv) {
-	usbIn = new Thread(inputIntensity, input);
-	cbR = new Thread(changeBrightnessR, 0);
-	cbG = new Thread(changeBrightnessG, 50);
-	cbB = new Thread(changeBrightnessB, 100);
-	while (true) {
+	cbR = new Thread(changeBrightnessR);
+	cbG = new Thread(changeBrightnessG);
+	cbB = new Thread(changeBrightnessB);
+	usbIn = new Thread(inputIntensity);
+	//while (true) {
 		usbIn->join();
-		cbR->join();
-		cbG->join();
-		cbB->join();
-	}
+		//tentar dar join em um só
+		//cbR->join();
+		//cbG->join();
+		//cbB->join();
+	//}
 	
 }
 
@@ -43,88 +44,98 @@ void sleep(unsigned long ms) {
     EPOS::Delay(ms *1); //Holds for -+ms+- microseconds
 }
 
-int inputIntensity(int input) {
+int inputIntensity() {
+	unsigned int counter = 0;
 	while(true) {
-	sleep(1000);
-	input = USB::get();
-	cout << input;
-	
+		counter++;
+		if (counter > 2000) {
+			input = USB::get();
+			switch(input) {
+				case 49: 
+				currentR+=10;
+				break;
+				case 50:
+				currentR-=10;
+				break;
+				case 51:
+				currentG+=10;
+				break;
+				case 52:
+				currentG-=10;
+				break;
+				case 53:
+				currentB+=10;
+				break;
+				case 54:
+				currentB-=10;
+				case 55:
+				for (int i=0; i<=100; i++) {
+					currentR = i;
+					sleep(100);
+				}
+				for (int i=100; i>=0; i--) {
+					currentR = i;
+					sleep(100);
+				}
+				break;
+				default:
+				currentR=0;
+				currentG=0;
+				currentB=0;
+				break;
+			}
+			counter = 0;
+				
+		}
+		Thread::yield();	
 	}
 	return input;
 }
 
-int changeBrightnessR(int intensity) {
+int changeBrightnessR() {
 	while (true) {
     	ledR.set(true);
     	// Loop over duty cycle
-    	for (int x = 0; x < intensity; x++)
+    	for (int x = 0; x < currentR; x++)
     	{   
         	// Set LEDs off when they're on
         	 if (x > ledR.get())
-        		{
-                	ledR.set(false);
-            	}
-        sleep(intensity);
+               	ledR.set(false);
+        sleep(currentR);
     	}
     	Thread::yield();
     }
     return 0;
 }
 
-int changeBrightnessG(int intensity) {
+int changeBrightnessG() {
 	while (true) {
     	ledG.set(true);
     	// Loop over duty cycle
-    	for (int x = 0; x < intensity; x++)
+    	for (int x = 0; x < currentG; x++)
     	{   
         	// Set LEDs off when they're on
         	 if (x > ledG.get())
-        		{
-                	ledG.set(false);
-            	}
-        sleep(intensity);
+               	ledG.set(false);
+        sleep(currentG);
     	}
     	Thread::yield();
     }
     return 0;
 }
 
-int changeBrightnessB(int intensity) {
+int changeBrightnessB() {
 	while (true) {
     	ledB.set(true);
     	// Loop over duty cycle
-    	for (int x = 0; x < intensity; x++)
+    	for (int x = 0; x < currentB; x++)
     	{   
         	// Set LEDs off when they're on
         	 if (x > ledB.get())
-        		{
-                	ledB.set(false);
-            	}
-        sleep(intensity);
+	           	ledB.set(false);
+        sleep(currentB);
     	}
     	Thread::yield();
-    }
-    return 0;
-}
-
-int changeBrightnessAll(int intensity) {
-	while (true) {
-	// Set all LEDs on
-    	ledR.set(true);
-    	ledG.set(true);
-    	ledB.set(true);
-    	// Loop over duty cycle
-    	for (int x = 0; x < intensity; x++)
-    	{   
-        	// Set LEDs off when they're on
-        	 if (x > ledR.get())
-        		{
-                	ledR.set(false);
-    				ledG.set(false);
-    				ledB.set(false);
-            	}
-        sleep(intensity);
-    	}
     }
     return 0;
 }
