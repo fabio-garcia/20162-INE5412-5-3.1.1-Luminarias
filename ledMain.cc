@@ -11,6 +11,12 @@ int changeBrightnessB();
 int inputIntensity();
 
 using namespace EPOS;
+#define SLEEP_FOR_NEXT_INPUT 20000
+#define MAXIMUM_BRIGHTNESS 0 //Max. and min. represent the efficient range of the PWM algorithm 
+#define MINIMUM_BRIGHTNESS 30
+#define PWM_SCALE 700 //Sleep scaling for the PWM polling
+#define INCREASE_BRIGHTNESS 1
+#define DECREASE_BRIGHTNESS 1
 
 GPIO ledR('C', 3, GPIO::OUTPUT);
 GPIO ledG('C', 1, GPIO::OUTPUT);
@@ -20,9 +26,9 @@ Thread * cbG;
 Thread * cbB;
 Thread * usbIn;
 int input;
-int currentR = 0;
-int currentG = 0;
-int currentB = 0;
+int currentR = MAXIMUM_BRIGHTNESS;
+int currentG = MAXIMUM_BRIGHTNESS;
+int currentB = MAXIMUM_BRIGHTNESS;
 OStream cout;
 
 int main(int argc, char** argv) {
@@ -30,14 +36,7 @@ int main(int argc, char** argv) {
 	cbG = new Thread(changeBrightnessG);
 	cbB = new Thread(changeBrightnessB);
 	usbIn = new Thread(inputIntensity);
-	//while (true) {
-		usbIn->join();
-		//tentar dar join em um só
-		//cbR->join();
-		//cbG->join();
-		//cbB->join();
-	//}
-	
+	usbIn->join();
 }
 
 void sleep(unsigned long ms) {
@@ -46,69 +45,71 @@ void sleep(unsigned long ms) {
 
 int inputIntensity() {
 	while(true) {
-		sleep(10000);
+		sleep(SLEEP_FOR_NEXT_INPUT);
 			input = USB::get();
+			Thread::yield();
 			switch(input) {
 				case 49:
-				if(currentR<100)
-				currentR+=1;
+				if(currentR<MINIMUM_BRIGHTNESS)
+				currentR+=INCREASE_BRIGHTNESS;
 				break;
 				case 50:
-				if(currentR>1)
-				currentR-=1;
+				if(currentR>MAXIMUM_BRIGHTNESS+1)
+				currentR-=DECREASE_BRIGHTNESS;
 				break;
 				case 51:
-				if(currentG<100)
-				currentG+=1;
+				if(currentG<MINIMUM_BRIGHTNESS)
+				currentG+=INCREASE_BRIGHTNESS;
 				break;
 				case 52:
-				if(currentG>1)
-				currentG-=1;
+				if(currentG>MAXIMUM_BRIGHTNESS+1)
+				currentG-=DECREASE_BRIGHTNESS;
 				break;
 				case 53:
-				if(currentB<100)
-				currentB+=1;
+				if(currentB<MINIMUM_BRIGHTNESS)
+				currentB+=INCREASE_BRIGHTNESS;
 				break;
 				case 54:
-				if(currentB>1)
-				currentB-=1;
+				if(currentB>MAXIMUM_BRIGHTNESS+1)
+				currentB-=DECREASE_BRIGHTNESS;
 				break;
 				case 55:
-				for (currentR=0; currentR<=500; currentR++) {
+				for (currentR=MINIMUM_BRIGHTNESS; currentR>MAXIMUM_BRIGHTNESS; currentR--) {
 					Thread::yield();
-					sleep(10000);
+					sleep(150000);
 				}
-				for (currentR=500; currentR>=0; currentR--) {
+				for (currentR=MAXIMUM_BRIGHTNESS; currentR<MINIMUM_BRIGHTNESS; currentR++) {
 					Thread::yield();
-					sleep(10000);
+					sleep(150000);
 				}
 				break;
 				case 56:
-				for (currentG=0; currentG<=500; currentG++) {
+				for (currentG=MINIMUM_BRIGHTNESS; currentG>MAXIMUM_BRIGHTNESS; currentG--) {
 					Thread::yield();
-					sleep(10000);
+					sleep(150000);
 				}
-				for (currentG=500; currentG>=0; currentG--) {
+				for (currentG=MAXIMUM_BRIGHTNESS; currentG<MINIMUM_BRIGHTNESS; currentG++) {
 					Thread::yield();
-					sleep(10000);
+					sleep(150000);
 				}
 				break;
 				case 57:
-				for (currentB=0; currentB<=500; currentB++) {
+				for (currentB=MINIMUM_BRIGHTNESS; currentB>MAXIMUM_BRIGHTNESS; currentB--) {
 					Thread::yield();
-					sleep(10000);
+					sleep(150000);
 				}
-				for (currentB=500; currentB>=0; currentB--) {
+				for (currentB=MAXIMUM_BRIGHTNESS; currentB<MINIMUM_BRIGHTNESS; currentB++) {
 					Thread::yield();
-					sleep(10000);
+					sleep(150000);
 				}
 				break;
 				default:
-				currentR=0;
-				currentG=0;
-				currentB=0;
+				currentR=MAXIMUM_BRIGHTNESS;
+				currentG=MAXIMUM_BRIGHTNESS;
+				currentB=MAXIMUM_BRIGHTNESS;
 				break;
-			}				
+			}
+		sleep(SLEEP_FOR_NEXT_INPUT);			
 		Thread::yield();	
 	}
 	return input;
@@ -116,14 +117,15 @@ int inputIntensity() {
 
 int changeBrightnessR() {
 	while (true) {
+		if(currentR != MINIMUM_BRIGHTNESS)
     	ledR.set(true);
     	// Loop over duty cycle
-    	for (int x = 0; x < currentR; x++)
+    	for (int x = MAXIMUM_BRIGHTNESS; x < currentR; x++)
     	{   
-        	// Set LEDs off when they're on
+        	// Set LED off when it's on
         	 if (x > ledR.get())
                	ledR.set(false);
-        sleep(currentR);
+        sleep(PWM_SCALE);
     	}
     	Thread::yield();
     }
@@ -132,14 +134,15 @@ int changeBrightnessR() {
 
 int changeBrightnessG() {
 	while (true) {
+		if(currentG != MINIMUM_BRIGHTNESS)
     	ledG.set(true);
     	// Loop over duty cycle
-    	for (int x = 0; x < currentG; x++)
+    	for (int x = MAXIMUM_BRIGHTNESS; x < currentG; x++)
     	{   
-        	// Set LEDs off when they're on
+        	// Set LED off when it's on
         	 if (x > ledG.get())
                	ledG.set(false);
-        sleep(currentG);
+        sleep(PWM_SCALE);
     	}
     	Thread::yield();
     }
@@ -148,14 +151,15 @@ int changeBrightnessG() {
 
 int changeBrightnessB() {
 	while (true) {
+		if(currentB != MINIMUM_BRIGHTNESS)
     	ledB.set(true);
     	// Loop over duty cycle
-    	for (int x = 0; x < currentB; x++)
+    	for (int x = MAXIMUM_BRIGHTNESS; x < currentB; x++)
     	{   
-        	// Set LEDs off when they're on
+        	// Set LED off when it's on
         	 if (x > ledB.get())
 	           	ledB.set(false);
-        sleep(currentB);
+        sleep(PWM_SCALE);
     	}
     	Thread::yield();
     }
