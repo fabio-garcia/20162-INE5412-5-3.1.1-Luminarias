@@ -20,9 +20,9 @@ Thread * cbG;
 Thread * cbB;
 Thread * usbIn;
 int input;
-int currentR = 10;
-int currentG = 20;
-int currentB = 30;
+int currentR = 0;
+int currentG = 0;
+int currentB = 0;
 OStream cout;
 
 int main(int argc, char** argv) {
@@ -45,37 +45,62 @@ void sleep(unsigned long ms) {
 }
 
 int inputIntensity() {
-	unsigned int counter = 0;
 	while(true) {
-		counter++;
-		if (counter > 2000) {
+		sleep(10000);
 			input = USB::get();
 			switch(input) {
-				case 49: 
-				currentR+=10;
+				case 49:
+				if(currentR<100)
+				currentR+=1;
 				break;
 				case 50:
-				currentR-=10;
+				if(currentR>1)
+				currentR-=1;
 				break;
 				case 51:
-				currentG+=10;
+				if(currentG<100)
+				currentG+=1;
 				break;
 				case 52:
-				currentG-=10;
+				if(currentG>1)
+				currentG-=1;
 				break;
 				case 53:
-				currentB+=10;
+				if(currentB<100)
+				currentB+=1;
 				break;
 				case 54:
-				currentB-=10;
+				if(currentB>1)
+				currentB-=1;
+				break;
 				case 55:
-				for (int i=0; i<=100; i++) {
-					currentR = i;
-					sleep(100);
+				for (currentR=0; currentR<=500; currentR++) {
+					Thread::yield();
+					sleep(10000);
 				}
-				for (int i=100; i>=0; i--) {
-					currentR = i;
-					sleep(100);
+				for (currentR=500; currentR>=0; currentR--) {
+					Thread::yield();
+					sleep(10000);
+				}
+				break;
+				case 56:
+				for (currentG=0; currentG<=500; currentG++) {
+					Thread::yield();
+					sleep(10000);
+				}
+				for (currentG=500; currentG>=0; currentG--) {
+					Thread::yield();
+					sleep(10000);
+				}
+				break;
+				case 57:
+				for (currentB=0; currentB<=500; currentB++) {
+					Thread::yield();
+					sleep(10000);
+				}
+				for (currentB=500; currentB>=0; currentB--) {
+					Thread::yield();
+					sleep(10000);
 				}
 				break;
 				default:
@@ -83,10 +108,7 @@ int inputIntensity() {
 				currentG=0;
 				currentB=0;
 				break;
-			}
-			counter = 0;
-				
-		}
+			}				
 		Thread::yield();	
 	}
 	return input;
